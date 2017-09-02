@@ -2,11 +2,14 @@
 # -*- coding: utf-8 -*-
 
 
+from __future__ import print_function
+from future import standard_library
+standard_library.install_aliases()
 import os
 import distutils
 from distutils.core import Command
 from distutils.dist import Distribution
-from ConfigParser import SafeConfigParser, NoOptionError, NoSectionError
+from configparser import SafeConfigParser, NoOptionError, NoSectionError
 
 
 distutils_path = os.path.dirname(os.path.abspath(distutils.__file__))
@@ -82,4 +85,4 @@ class sdist_ebuild(Command):
         ebuild.unpacked_dir = os.getcwd()
         to = os.path.join(self.dist_dir, ebuild['p'] + '.ebuild')
         ebuild.create(to)
-        print 'ebuild saved to %s' % to
+        print('ebuild saved to %s' % to)

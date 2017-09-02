@@ -7,9 +7,12 @@ Various functions dealing with portage
 
 """
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import object
 import sys
 import os
-import commands
+import subprocess
 import logging
 
 from portage import config as portage_config
@@ -77,7 +80,7 @@ class PortageUtils(object):
             overlay_path = overlays[overlay_name]
         else:
             raise GPyPiOverlayDoesNotExist('"%s". Available: %s' \
-                % (overlay_name, " ".join(overlays.keys())))
+                % (overlay_name, " ".join(list(overlays.keys()))))
         return overlay_path
 
     @classmethod
@@ -154,7 +157,7 @@ class PortageUtils(object):
             use Python API.
 
         """
-        (status, output) = commands.getstatusoutput("ebuild %s digest setup clean unpack" % ebuild_path)
+        (status, output) = subprocess.getstatusoutput("ebuild %s digest setup clean unpack" % ebuild_path)
         if status:
             # Portage's error message, sometimes.
             # Couldn't determine PN or PV so we misnamed ebuild
@@ -235,7 +238,7 @@ class PortageUtils(object):
         if not os.path.isdir(ebuild_dir):
             try:
                 os.makedirs(ebuild_dir)
-            except OSError, err:
+            except OSError as err:
                 raise GPyPiCouldNotCreateEbuildPath(err)
         return ebuild_dir
 

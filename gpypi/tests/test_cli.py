@@ -4,6 +4,7 @@
 
 """
 
+from builtins import object
 import unittest2
 import mock
 from pkg_resources import parse_requirements
@@ -16,7 +17,7 @@ class TestGPyPI(BaseTestCase):
     """"""
 
     def setUp(self):
-        class Options:
+        class Options(object):
             no_deps = False
             overwrite = False
             category = False

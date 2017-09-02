@@ -17,6 +17,7 @@ Creates an ebuild
 .. currentmodule: gpypi.ebuild
 
 """
+from __future__ import print_function
 
 import os
 import logging
@@ -121,7 +122,7 @@ class Ebuild(dict):
         """
         d = {}
         if metadata and 'pypi' in self.options.use:
-            for key, value in metadata.iteritems():
+            for key, value in metadata.items():
                 new_key = key.lower().replace('-', '').replace('_', '')
                 d[new_key] = value
             self.update(d)
@@ -144,7 +145,7 @@ class Ebuild(dict):
                     if len(i) > length:
                         length = len(i)
                         tc = i
-                self.options.category = topic_dict[string.join(tc, ' :: ')]
+                self.options.category = topic_dict[' :: '.join(tc)]
 
     def set_ebuild_vars(self):
         """Calls :meth:`gpypi.enamer.Enamer.get_vars` and
@@ -154,7 +155,7 @@ class Ebuild(dict):
         d = Enamer.get_vars(self.options.uri, self.options.up_pn, self.options.up_pv)
         self.update(d)
 
-        if filter(None, [src_uri.lower().endswith('.zip') for src_uri in self['src_uri']]):
+        if [_f for _f in [src_uri.lower().endswith('.zip') for src_uri in self['src_uri']] if _f]:
             self.add_depend("app-arch/unzip")
 
     def parse_metadata(self):
@@ -221,7 +222,7 @@ class Ebuild(dict):
                 raise GPyPiNoSetupFile("%s does not exists." % setup_file)
             else:
                 # run setup file from unpacked_dir
-                cwd = os.getcwdu()
+                cwd = os.getcwd()
                 try:
                     os.chdir(self.unpacked_dir)
                     utils.import_path(setup_file)
@@ -241,7 +242,7 @@ class Ebuild(dict):
         self.get_dependencies(self.install_requires)
         self.get_dependencies(self.setup_requires)
         # TODO: handle setup as depend instead of rdepend
-        for use_flag, dependency in self.extras_require.iteritems():
+        for use_flag, dependency in self.extras_require.items():
             self.get_dependencies(dependency, if_use=use_flag)
 
         self.discover_docs_and_examples()
@@ -258,7 +259,7 @@ class Ebuild(dict):
         module_names = []
         module_names.extend(self.setup_keywords.get('packages', []))
         module_names.extend(self.setup_keywords.get('py_modules', []))
-        module_names.extend(filter(None, self.setup_keywords.get('package_dir', {}).keys()))
+        module_names.extend([_f for _f in list(self.setup_keywords.get('package_dir', {}).keys()) if _f])
 
         # set modname only if needed
         if len(module_names) == 1 and module_names[0] != self['pn']:
@@ -449,11 +450,11 @@ class Ebuild(dict):
 
         self.show_warnings()
         if formatting == "none":
-            print self.output
+            print(self.output)
         else:
             # use pygments to print ebuild
             formatter = get_formatter_by_name(formatting, background=background)
-            print highlight(self.output, BashLexer(), formatter)
+            print(highlight(self.output, BashLexer(), formatter))
 
     def create(self, ebuild_path=None):
         """Write ebuild and update it after unpacking and examining ${S}"""

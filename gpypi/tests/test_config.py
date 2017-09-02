@@ -199,7 +199,7 @@ class TestQuestionnaire(BaseTestCase):
 
     def test_error_handling(self):
         answer = iter(['foobar', 'y'])
-        self.assertEqual(True, self.q.ask('no_deps', lambda x: answer.next()))
+        self.assertEqual(True, self.q.ask('no_deps', lambda x: next(answer)))
         self.assertTrue('Not a boolean' in self.handler.error[0])
         self.assertTrue('foobar' in self.handler.error[0])
 

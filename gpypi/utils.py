@@ -3,6 +3,7 @@
 """
 """
 
+from past.builtins import basestring
 import os
 import sys
 import types
@@ -10,7 +11,7 @@ import logging
 
 from portage.output import EOutput
 from pkg_resources import EntryPoint
-
+from imp import reload
 
 def load_model(dotted_name):
     """Load module with dotted name syntax
@@ -58,7 +59,7 @@ def asbool(obj):
     :raises: :exc:`ValueError` -- If object could not be booleanized.
 
     """
-    if isinstance(obj, (str, unicode)):
+    if isinstance(obj, str):
         obj = obj.strip().lower()
         if obj in ['true', 'yes', 'on', 'y', 't', '1']:
             return True
@@ -81,7 +82,7 @@ class PortageStreamHandler(logging.StreamHandler):
                 stream.write(fs % msg)
             else:
                 try:
-                    if (isinstance(msg, unicode) and
+                    if (isinstance(msg, str) and
                         getattr(stream, 'encoding', None)):
                         fs = fs.decode(stream.encoding)
                         try:

@@ -6,6 +6,8 @@ Command-line code for :mod:`gpypi`
 
 """
 
+from builtins import str
+from builtins import object
 import os
 import sys
 import pdb
@@ -208,7 +210,7 @@ class CLI(object):
         self.config = config
         try:
             getattr(self, config.command)()
-        except GPyPiException, e:
+        except GPyPiException as e:
             log.error("%s: %s", e.__class__.__name__, e)
 
     def create(self):
@@ -406,8 +408,12 @@ def main(args=sys.argv[1:]):
                 ". Expect more problems to come.\n")
 
     config_mgr = ConfigManager.load_from_ini(args.config_file)
+
+    print(args)
+    print(Config.from_argparse(args))
     config_mgr.configs['argparse'] = Config.from_argparse(args)
 
+    print(repr(config_mgr))
     # handle command
     try:
         CLI(config_mgr)

@@ -11,10 +11,15 @@ Implements :class:`Config` and :class:`ConfigManager` to be used as
 
 """
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
+from past.builtins import basestring
+from builtins import object
 import os
 import shutil
 import logging
-from ConfigParser import SafeConfigParser
+from configparser import SafeConfigParser
 
 from portage.output import colorize
 
@@ -27,7 +32,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 
 class Config(dict):
     """Holds config values retrieved from various sources. To load
-    configuration from a source use one of :meth:`from_*` methods.
+    configuration from a source use one of :meth:`from_*` method
     Class also defines specification for supported options in :attr:`allowed_options`.
 
     Values are retrieved with help of :meth:`Config.validator` method.
@@ -114,7 +119,7 @@ class Config(dict):
         """
         config = SafeConfigParser()
         config.read(path_to_ini)
-        d = map(lambda i: (i[0], cls.validate(i[0], i[1])), config.items(section))
+        d = [(i[0], cls.validate(i[0], i[1])) for i in config.items(section)]
         return cls(d)
 
     @classmethod
@@ -137,7 +142,7 @@ class Config(dict):
         :returns: :class:`Config` instance
 
         """
-        return cls(filter(lambda i: i[1] is not None, options.__dict__.iteritems()))
+        return cls([i for i in iter(options.__dict__.items()) if i[1] is not None])
 
     ## validate types
     @classmethod
@@ -179,7 +184,8 @@ class Config(dict):
         """
         if isinstance(value, basestring):
             if isinstance(value, str):
-                value = unicode(value, encoding)
+                #value = str(value, encoding)
+                value = value.encode(encoding)
             return value
         else:
             raise GPyPiValidationError("Not a string: %r" % value)
@@ -227,7 +233,7 @@ class ConfigManager(object):
         self.configs = {'questionnaire': {}}
 
     def __repr__(self):
-        return "<ConfigManager configs(%s) use(%s)>" % (self.configs.keys(), self.use)
+        return "<ConfigManager configs(%s) use(%s)>" % (list(self.configs.keys()), self.use)
 
     def __getattr__(self, name):
         if len(self.configs) == 1:
@@ -310,7 +316,9 @@ class Questionnaire(object):
     def __init__(self, options):
         self.options = options
 
-    def ask(self, name, input_f=raw_input):
+    from builtins import input
+
+    def ask(self, name, input_f=input):
         """Ask for a config value.
 
         :param name: Name of config option to be retrieved
@@ -335,7 +343,7 @@ class Questionnaire(object):
 
         try:
             return Config.validate(name, answer)
-        except GPyPiValidationError, e:
+        except GPyPiValidationError as e:
             log.error("Error: %s" % e)
             return self.ask(name, input_f)
 

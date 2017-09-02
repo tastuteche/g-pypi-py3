@@ -7,10 +7,14 @@ syntax to Gentoo ebuild syntax belongs to this module.
 
 """
 
-import urlparse
+from future import standard_library
+standard_library.install_aliases()
+from past.builtins import basestring
+from builtins import object
+import urllib.parse
 import socket
 import logging
-import httplib
+import http.client
 import re
 import os
 
@@ -18,6 +22,7 @@ from portage import pkgsplit
 
 from gpypi.portage_utils import PortageUtils
 from gpypi.exc import *
+from future.utils import with_metaclass
 
 
 log = logging.getLogger(__name__)
@@ -51,7 +56,7 @@ class Enamer(object):
         'foobar-1.0'
 
         """
-        path = urlparse.urlparse(uri)[2]
+        path = urllib.parse.urlparse(uri)[2]
         path = path.split('/')
         return cls.strip_ext(path[-1])
 
@@ -170,8 +175,8 @@ class Enamer(object):
         'http://downloads.sourceforge.net/pythonreports/PythonReports-0.3.1.tar.gz'
 
         """
-        skinned_uri = urlparse.urlparse(uri)
-        return urlparse.urlunparse(skinned_uri[:3] + ('',) * 3)
+        skinned_uri = urllib.parse.urlparse(uri)
+        return urllib.parse.urlunparse(skinned_uri[:3] + ('',) * 3)
 
     @classmethod
     def parse_setup_py(cls, distribution):
@@ -187,7 +192,7 @@ class Enamer(object):
         d['description'] = distribution.get_description()
         d['license'] = cls.convert_license(distribution.get_classifiers(), distribution.metadata.get_license())
 
-        for key in dict(d).keys():
+        for key in list(dict(d).keys()):
             if d[key] == 'UNKNOWN':
                 del d[key]
         return d
@@ -288,7 +293,7 @@ class Enamer(object):
                 up_pv, additional_version, my_pv)
             # TODO: if ALSO suf_matches succeeds, it's not implemented
 
-        for this_suf in suf_matches.keys():
+        for this_suf in list(suf_matches.keys()):
             if rs_match:
                 break
             for regex in suf_matches[this_suf]:
@@ -654,7 +659,7 @@ class Enamer(object):
             return license
         else:
             if isinstance(setup_license, str) and not Enamer.is_valid_portage_license(setup_license):
-                for guess, value in guess_license.iteritems():
+                for guess, value in guess_license.items():
                     if guess in setup_license:
                         return value
                 return ""
@@ -737,7 +742,7 @@ class SrcUriMetaclass(type):
         return cls
 
 
-class SrcUriNamer(object):
+class SrcUriNamer(with_metaclass(SrcUriMetaclass, object)):
     """Base class for :term:`SRC_URI` providers.
 
     Main purpose of this class is to provide unique interface for
@@ -749,7 +754,6 @@ class SrcUriNamer(object):
     :param uri: HTTP URI
     :type uri: string
     """
-    __metaclass__ = SrcUriMetaclass
     BASE_HOMEPAGE = None
     BASE_URI = None
 
@@ -757,7 +761,7 @@ class SrcUriNamer(object):
         self.uris = []
         self.homepages = []
         self.uri = uri
-        self.up = urlparse.urlparse(uri)
+        self.up = urllib.parse.urlparse(uri)
         self.enamer = enamer
         self.up_pn = up_pn
         self.up_pv = up_pv
@@ -790,12 +794,12 @@ class SrcUriNamer(object):
     def is_uri_online(self, uri):
         """Issue HTTP HEAD request to confirm location of URI"""
         log.debug('is_uri_online: %s', uri)
-        up = urlparse.urlparse(uri)
-        conn = httplib.HTTPConnection(up.netloc, timeout=3)
+        up = urllib.parse.urlparse(uri)
+        conn = http.client.HTTPConnection(up.netloc, timeout=3)
         try:
             conn.request('HEAD', up.path)
             resp = conn.getresponse()
-        except (httplib.HTTPException, socket.error):
+        except (http.client.HTTPException, socket.error):
             log.error('is_uri_online: timeout')
             return False
         log.error('is_uri_online: status(%r)' % resp.status)

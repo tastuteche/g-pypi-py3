@@ -9,6 +9,8 @@
 
 """
 
+from builtins import str
+from builtins import object
 import os
 import logging
 from subprocess import Popen, PIPE, STDOUT
