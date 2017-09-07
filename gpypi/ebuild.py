@@ -43,7 +43,7 @@ from gpypi.enamer import Enamer
 from gpypi.workflow import Repoman, Echangelog, Metadata
 from gpypi.exc import *
 from gpypi.trove_map import topic_dict
-
+from .compat import get_python_compat
 log = logging.getLogger(__name__)
 
 
@@ -84,14 +84,16 @@ class Ebuild(dict):
             trim_blocks=True)
 
         import re
+
         def replace_re(s, find, replace):
             return re.sub(find, replace, s)
         self.env.filters['replace_re'] = replace_re
-        
+
         self.template = self.env.get_template(self.EBUILD_TEMPLATE)
 
         # Variables that will be passed to the Jinja template
         d = {
+            'python_compat': get_python_compat(self.options.up_pn, self.options.up_pv),
             'python_modname': None,
             'rdepend': set(),
             'depend': set(),
@@ -135,7 +137,8 @@ class Ebuild(dict):
             # default category is 'dev-python'
             self.options.category = 'dev-python'
 
-            topics = [i for i in self.get('classifiers', []) if i[:5] == 'Topic']
+            topics = [i for i in self.get(
+                'classifiers', []) if i[:5] == 'Topic']
             # Other wise set the category to the one paired with the
             # most detailed classifier.
             topic_classifiers = [tuple(i.split(' :: ')) for i in topics]
@@ -152,7 +155,8 @@ class Ebuild(dict):
         updates instance variables.
 
         """
-        d = Enamer.get_vars(self.options.uri, self.options.up_pn, self.options.up_pv)
+        d = Enamer.get_vars(
+            self.options.uri, self.options.up_pn, self.options.up_pv)
         self.update(d)
 
         if [_f for _f in [src_uri.lower().endswith('.zip') for src_uri in self['src_uri']] if _f]:
@@ -169,7 +173,8 @@ class Ebuild(dict):
             # Replace double quotes to keep bash syntax correct
             self['description'] = self['description'].replace('"', "'")
 
-        my_license = Enamer.convert_license(self.get('classifiers', []), self.get('license', ""))
+        my_license = Enamer.convert_license(
+            self.get('classifiers', []), self.get('license', ""))
 
         if Enamer.is_valid_portage_license(my_license):
             self['license'] = my_license
@@ -229,8 +234,8 @@ class Ebuild(dict):
                 finally:
                     os.chdir(cwd)
         else:
-            raise GPyPiNoDistribution("Unpacked dir could not be found: %s"\
-                % self.unpacked_dir)
+            raise GPyPiNoDistribution("Unpacked dir could not be found: %s"
+                                      % self.unpacked_dir)
 
         # extract dependencies
         self.install_requires = self.setup_keywords.get('install_requires', '')
@@ -259,7 +264,8 @@ class Ebuild(dict):
         module_names = []
         module_names.extend(self.setup_keywords.get('packages', []))
         module_names.extend(self.setup_keywords.get('py_modules', []))
-        module_names.extend([_f for _f in list(self.setup_keywords.get('package_dir', {}).keys()) if _f])
+        module_names.extend(
+            [_f for _f in list(self.setup_keywords.get('package_dir', {}).keys()) if _f])
 
         # set modname only if needed
         if len(module_names) == 1 and module_names[0] != self['pn']:
@@ -306,7 +312,7 @@ class Ebuild(dict):
                 # No version of requirement was specified so we only add
                 # dev-python/pn
                 self.add_rdepend(Enamer.construct_atom(pn, category,
-                    uses=extras, if_use=if_use))
+                                                       uses=extras, if_use=if_use))
             else:
                 comparator, ver = req.specs[0]
                 ver = Enamer.parse_pv(ver)[0] or ver
@@ -322,47 +328,49 @@ class Ebuild(dict):
                             comparator2.startswith("<"):
                         # we set blocker for <*
                         self.add_rdepend(Enamer.construct_atom(pn, category, ver1,
-                            comparator1, uses=extras, if_use=if_use))
+                                                               comparator1, uses=extras, if_use=if_use))
                         self.add_rdepend(Enamer.construct_atom(pn, category, ver2,
-                            "!" + comparator2, uses=extras, if_use=if_use))
+                                                               "!" + comparator2, uses=extras, if_use=if_use))
                     elif comparator2.startswith(">") and \
                             comparator1.startswith("<"):
                         self.add_rdepend(Enamer.construct_atom(pn, category, ver2,
-                            comparator2, uses=extras, if_use=if_use))
+                                                               comparator2, uses=extras, if_use=if_use))
                         self.add_rdepend(Enamer.construct_atom(pn, category, ver1,
-                            "!" + comparator1, uses=extras, if_use=if_use))
+                                                               "!" + comparator1, uses=extras, if_use=if_use))
                     else:
                         self['warnings'].add("Couldn't resolve requirements. "
-                            "You will need to make sure the RDEPEND for %s is "
-                            "correct." % req)
+                                             "You will need to make sure the RDEPEND for %s is "
+                                             "correct." % req)
                         self.add_rdepend(Enamer.construct_atom(pn, category,
-                            uses=extras, if_use=if_use))
-                        self['warnings'].add("Could not determine dependency: %s" % req)
+                                                               uses=extras, if_use=if_use))
+                        self['warnings'].add(
+                            "Could not determine dependency: %s" % req)
                     break
                 # Requirement.specs is a list of (comparator,version) tuples
                 if comparator == "==":
                     comparator = "="
                 atom = Enamer.construct_atom(pn, category, ver, comparator,
-                    uses=extras)
+                                             uses=extras)
                 if PortageUtils.is_valid_atom(atom):
                     self.add_rdepend(Enamer.construct_atom(pn, category, ver,
-                        comparator, uses=extras, if_use=if_use))
+                                                           comparator, uses=extras, if_use=if_use))
                 else:
                     log.debug("Invalid PV in dependency: (Requirement %s) %s",
-                        req, atom)
-                    installed_pv = PortageUtils.get_installed_ver(Enamer.\
-                        construct_atom(pn, category, uses=extras, if_use=if_use))
+                              req, atom)
+                    installed_pv = PortageUtils.get_installed_ver(Enamer.
+                                                                  construct_atom(pn, category, uses=extras, if_use=if_use))
                     if installed_pv:
                         # If we have it installed, use >= installed version
                         self.add_rdepend(Enamer.construct_atom(pn, category,
-                            installed_pv, '>=', uses=extras, if_use=if_use))
+                                                               installed_pv, '>=', uses=extras, if_use=if_use))
                     else:
                         # If package has invalid version and we don't have
                         # an ebuild in portage, just add PN to DEPEND, no
                         # version.
-                        self['warnings'].add("Could not determine dependency: %s" % req)
+                        self['warnings'].add(
+                            "Could not determine dependency: %s" % req)
                         self.add_rdepend(Enamer.construct_atom(pn, category,
-                            uses=extras, if_use=if_use))
+                                                               uses=extras, if_use=if_use))
 
     def add_setuptools_depend(self, req):
         """
@@ -417,12 +425,13 @@ class Ebuild(dict):
         """Add ${:term:`S`} to ebuild if needed."""
         log.debug("Trying to determine ${S}, unpacking...")
         if self.unpacked_dir is None:
-            unpacked_dir = PortageUtils.find_s_dir(self['p'], self.options.category)
+            unpacked_dir = PortageUtils.find_s_dir(
+                self['p'], self.options.category)
             if unpacked_dir == "":
                 self["s"] = "${WORKDIR}"
 
             self.unpacked_dir = os.path.join(PortageUtils.get_workdir(self['p'],
-                self.options.category), unpacked_dir)
+                                                                      self.options.category), unpacked_dir)
 
         if self.get('my_p', None):
             self["s"] = "${WORKDIR}/${MY_P}"
@@ -453,7 +462,8 @@ class Ebuild(dict):
             print(self.output)
         else:
             # use pygments to print ebuild
-            formatter = get_formatter_by_name(formatting, background=background)
+            formatter = get_formatter_by_name(
+                formatting, background=background)
             print(highlight(self.output, BashLexer(), formatter))
 
     def create(self, ebuild_path=None):
@@ -488,9 +498,10 @@ class Ebuild(dict):
     def find_path_to_ebuild(self, overlay_path):
         """"""
         ebuild_dir = PortageUtils.make_ebuild_dir(self.options.category,
-            self['pn'], overlay_path)
+                                                  self['pn'], overlay_path)
         if not os.path.isdir(ebuild_dir or ""):
-            raise GPyPiCouldNotCreateEbuildPath('Couldn not create ebuild directory %s' % ebuild_dir)
+            raise GPyPiCouldNotCreateEbuildPath(
+                'Couldn not create ebuild directory %s' % ebuild_dir)
         return os.path.join(ebuild_dir, self['p'] + ".ebuild")
 
     def write(self, overwrite=False):
@@ -511,7 +522,8 @@ class Ebuild(dict):
 
         # see if we want to overwrite
         if (not self.options.command == 'echo') and os.path.exists(self.ebuild_path) and not overwrite:
-            log.warn("Ebuild exists (use -o to overwrite), skipping: %s" % self.ebuild_path)
+            log.warn("Ebuild exists (use -o to overwrite), skipping: %s" %
+                     self.ebuild_path)
             return False
 
         # write ebuild
