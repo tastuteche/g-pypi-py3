@@ -17,6 +17,10 @@ import logging
 
 from portage import config as portage_config
 from portage import settings as portage_settings
+
+import portage
+eprefix = portage.settings['EPREFIX']
+
 try:
     # portage >= 2.2
     from portage import dep as portage_dep
@@ -25,7 +29,7 @@ except ImportError:
     from portage import portage_dep
 
 # TODO: find more clean way
-sys.path.insert(0, "/usr/lib/gentoolkit/pym")
+sys.path.insert(0, eprefix + "/usr/lib/gentoolkit/pym")
 import gentoolkit
 import gentoolkit.query
 
@@ -59,7 +63,8 @@ class PortageUtils(object):
                 repo_name = open(repo_name_path, 'r').readline().strip()
                 treemap[repo_name] = path
             except (OSError, IOError):
-                log.warn("No '%s', skipping" % os.path.join(path, 'profiles/repo_name'))
+                log.warn("No '%s', skipping" %
+                         os.path.join(path, 'profiles/repo_name'))
         return treemap
 
     @classmethod
@@ -79,8 +84,8 @@ class PortageUtils(object):
         if overlay_name in overlays:
             overlay_path = overlays[overlay_name]
         else:
-            raise GPyPiOverlayDoesNotExist('"%s". Available: %s' \
-                % (overlay_name, " ".join(list(overlays.keys()))))
+            raise GPyPiOverlayDoesNotExist('"%s". Available: %s'
+                                           % (overlay_name, " ".join(list(overlays.keys()))))
         return overlay_path
 
     @classmethod
@@ -94,8 +99,8 @@ class PortageUtils(object):
 
         """
         try:
-            #Return first version installed
-            #XXX Log warning if more than one installed (SLOT)?
+            # Return first version installed
+            # XXX Log warning if more than one installed (SLOT)?
             pkg = gentoolkit.find_installed_packages(cpn, masked=True)[0]
             return pkg.get_version()
         except:
@@ -157,7 +162,8 @@ class PortageUtils(object):
             use Python API.
 
         """
-        (status, output) = subprocess.getstatusoutput("ebuild %s digest setup clean unpack" % ebuild_path)
+        (status, output) = subprocess.getstatusoutput(
+            "ebuild %s digest setup clean unpack" % ebuild_path)
         if status:
             # Portage's error message, sometimes.
             # Couldn't determine PN or PV so we misnamed ebuild
@@ -187,7 +193,7 @@ class PortageUtils(object):
             if os.path.isdir(os.path.join(workdir, unpacked)):
                 dirs.append(unpacked)
         if len(dirs) == 1:
-            #Only one directory, must be it.
+            # Only one directory, must be it.
             return dirs[0]
         elif not len(dirs):
             #Unpacked in cwd

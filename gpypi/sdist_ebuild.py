@@ -11,6 +11,8 @@ from distutils.core import Command
 from distutils.dist import Distribution
 from configparser import SafeConfigParser, NoOptionError, NoSectionError
 
+import portage
+eprefix = portage.settings['EPREFIX']
 
 distutils_path = os.path.dirname(os.path.abspath(distutils.__file__))
 
@@ -22,11 +24,11 @@ class sdist_ebuild(Command):
     user_options = [
         ('config-file=', 'c',
          "GPyPi configuration file "
-         "[default: /etc/gpypi]"),
+         "[default: %s/etc/gpypi]" % eprefix),
         ('dist-dir=', 'd',
          "directory to put the source distribution archive(s) in "
          "[default: dist]"),
-        ]
+    ]
 
     argparse_config = {
         'overwrite': True,
@@ -39,7 +41,7 @@ class sdist_ebuild(Command):
 
     def finalize_options(self):
         if self.config_file is None:
-            self.config_file = "/etc/gpypi"
+            self.config_file = eprefix + "/etc/gpypi"
         if self.dist_dir is None:
             self.dist_dir = "dist"
 
@@ -80,7 +82,8 @@ class sdist_ebuild(Command):
 
         mgr = ConfigManager.load_from_ini(self.config_file)
         mgr.configs['argparse'] = Config(self.argparse_config)
-        mgr.configs['setup_py'] = Config.from_setup_py(Enamer.parse_setup_py(self.distribution))
+        mgr.configs['setup_py'] = Config.from_setup_py(
+            Enamer.parse_setup_py(self.distribution))
         ebuild = Ebuild(mgr)
         ebuild.unpacked_dir = os.getcwd()
         to = os.path.join(self.dist_dir, ebuild['p'] + '.ebuild')
