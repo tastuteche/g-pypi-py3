@@ -102,7 +102,7 @@ class Enamer(object):
 
         """
         return uri.startswith("http:") or uri.startswith("ftp:") or \
-                uri.startswith("mirror:") or uri.startswith("svn:")
+            uri.startswith("mirror:") or uri.startswith("svn:")
 
     @classmethod
     def _is_good_filename(cls, uri):
@@ -190,7 +190,8 @@ class Enamer(object):
         d = {}
         d['homepage'] = distribution.get_url()
         d['description'] = distribution.get_description()
-        d['license'] = cls.convert_license(distribution.get_classifiers(), distribution.metadata.get_license())
+        d['license'] = cls.convert_license(
+            distribution.get_classifiers(), distribution.metadata.get_license())
 
         for key in list(dict(d).keys()):
             if d[key] == 'UNKNOWN':
@@ -257,25 +258,25 @@ class Enamer(object):
         revision_suffixes = re.compile(
             r'(.*?)([\._-]*(?:r|patch|p)[\._-]*)([0-9]*)$', re.I)
         suf_matches = {
-                '_pre': [
-                    r'(.*?)([\._-]*dev[\._-]*r?)([0-9]+)$',
-                    r'(.*?)([\._-]*(?:pre|preview)[\._-]*)([0-9]*)$',
-                ],
-                '_alpha': [
-                    r'(.*?)([\._-]*(?:alpha|test)[\._-]*)([0-9]*)$',
-                    r'(.*?)([\._-]*a[\._-]*)([0-9]*)$',
-                    r'(.*[^a-z])(a)([0-9]*)$',
-                ],
-                '_beta': [
-                    r'(.*?)([\._-]*beta[\._-]*)([0-9]*)$',
-                    r'(.*?)([\._-]*b)([0-9]*)$',
-                    r'(.*[^a-z])(b)([0-9]*)$',
-                ],
-                '_rc': [
-                    r'(.*?)([\._-]*rc[\._-]*)([0-9]*)$',
-                    r'(.*?)([\._-]*c[\._-]*)([0-9]*)$',
-                    r'(.*[^a-z])(c[\._-]*)([0-9]+)$',
-                ],
+            '_pre': [
+                r'(.*?)([\._-]*dev[\._-]*r?)([0-9]+)$',
+                r'(.*?)([\._-]*(?:pre|preview)[\._-]*)([0-9]*)$',
+            ],
+            '_alpha': [
+                r'(.*?)([\._-]*(?:alpha|test)[\._-]*)([0-9]*)$',
+                r'(.*?)([\._-]*a[\._-]*)([0-9]*)$',
+                r'(.*[^a-z])(a)([0-9]*)$',
+            ],
+            '_beta': [
+                r'(.*?)([\._-]*beta[\._-]*)([0-9]*)$',
+                r'(.*?)([\._-]*b)([0-9]*)$',
+                r'(.*[^a-z])(b)([0-9]*)$',
+            ],
+            '_rc': [
+                r'(.*?)([\._-]*rc[\._-]*)([0-9]*)$',
+                r'(.*?)([\._-]*c[\._-]*)([0-9]*)$',
+                r'(.*[^a-z])(c[\._-]*)([0-9]+)$',
+            ],
         }
         rs_match = None
         my_pv = my_pv or []
@@ -288,9 +289,10 @@ class Enamer(object):
             replace_me = rev_match.group(2)
             rev = rev_match.group(3)
             additional_version = '.' + rev
-            my_pv.append("${PV: -%d}%s" % (len(additional_version), replace_me + rev))
+            my_pv.append("${PV: -%d}%s" %
+                         (len(additional_version), replace_me + rev))
             log.debug("parse_pv: new up_pv(%s), additional_version(%s), my_pv(%s)",
-                up_pv, additional_version, my_pv)
+                      up_pv, additional_version, my_pv)
             # TODO: if ALSO suf_matches succeeds, it's not implemented
 
         for this_suf in list(suf_matches.keys()):
@@ -311,7 +313,8 @@ class Enamer(object):
             rev = rs_match.group(3)  # 1234
             pv = major_ver + portage_suffix + rev
             my_pv.append("${PV/%s/%s}" % (portage_suffix, replace_me))
-            log.debug("parse_pv: major_ver(%s) replace_me(%s), rev(%s)", major_ver, replace_me, rev)
+            log.debug("parse_pv: major_ver(%s) replace_me(%s), rev(%s)",
+                      major_ver, replace_me, rev)
         else:
             # Single suffixes with no numeric component are simply removed.
             match = bad_suffixes.search(up_pv)
@@ -364,10 +367,10 @@ class Enamer(object):
             my_pn.append('${PN/-/ }')
             pn = up_pn.replace(' ', '-')
 
-        #if not my_pn:
+        # if not my_pn:
             #my_pn = "-".join(p.split("-")[:-1])
-            #if (my_pn == pn) or (my_pn == "${PN}"):
-                #my_pn = ""
+            # if (my_pn == pn) or (my_pn == "${PN}"):
+            #my_pn = ""
             #log.debug("set my_on to %s", my_pn)
 
         log.debug("parse_pn: my_pn(%s) pn(%s)", my_pn, pn)
@@ -510,12 +513,13 @@ class Enamer(object):
         if not PortageUtils.is_valid_atom(atom):
             log.debug(locals())
             raise GPyPiInvalidAtom("%s is not a valid portage atom. "
-                "We could not determine it from upstream pn(%s) and pv(%s)." %
-                (atom, up_pn, up_pv))
+                                   "We could not determine it from upstream pn(%s) and pv(%s)." %
+                                   (atom, up_pn, up_pv))
 
         # Check if we need to use MY_P based on src's uri
         src_uri, my_p_raw = cls.get_my_p(uri)
-        log.debug("getting SRC_URI with ${MY_P}: %s %s %s", src_uri, my_p, my_p_raw)
+        log.debug(
+            "getting SRC_URI with ${MY_P}: %s %s %s", src_uri, my_p, my_p_raw)
         if my_p_raw == p:
             my_pn = []
             my_p_raw = ''
@@ -527,7 +531,7 @@ class Enamer(object):
         log.debug("before MY_P guessing: %r", locals())
         if my_pn or my_pv:
             my_p = "%s-%s" % ("${MY_PN}" if my_pn else "${PN}",
-                "${MY_PV}" if my_pv else "${PV}")
+                              "${MY_PV}" if my_pv else "${PV}")
 
         return {
             'pn': pn,
@@ -561,7 +565,7 @@ class Enamer(object):
                 my_p = my_p.replace(pv, "${PV}")
 
         log.debug("get_src_uri: src_uri(%s), my_p(%s), my_pn(%s), my_p_raw(%s)",
-            src_uri, my_p, my_pn, my_p_raw)
+                  src_uri, my_p, my_pn, my_p_raw)
         return src_uri, my_p, my_pn, my_p_raw
 
     @classmethod
@@ -606,9 +610,11 @@ class Enamer(object):
         """
 
         if not isinstance(classifiers, list):
-            raise ValueError("classifiers should be a list, not %s" % type(classifiers))
+            raise ValueError(
+                "classifiers should be a list, not %s" % type(classifiers))
         if not isinstance(setup_license, basestring):
-            raise ValueError("setup_license should be a string, not %s" % type(setup_license))
+            raise ValueError(
+                "setup_license should be a string, not %s" % type(setup_license))
 
         my_license = ""
         for line in classifiers:
@@ -803,7 +809,8 @@ class SrcUriNamer(with_metaclass(SrcUriMetaclass, object)):
             log.error('is_uri_online: timeout')
             return False
         log.error('is_uri_online: status(%r)' % resp.status)
-        return resp.status in (302, 200)  # HEAD requests returns 302 FOUND when valid
+        # HEAD requests returns 302 FOUND when valid
+        return resp.status in (302, 200)
 
     def convert_src_uri(self):
         """"""
